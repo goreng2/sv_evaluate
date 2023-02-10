@@ -24,12 +24,14 @@ def create_2_graphs(item: Item):
         neg_scores=item.neg_scores,
     )
 
-    # host_pwd = os.environ["HOST_PWD"]
-    # det_path = os.path.join(host_pwd, "result", f"{item.name}_DET.png")
-    # dist_path = os.path.join(host_pwd, "result", f"{item.name}_Distribution.png")
+    # Server에서 테스트할 때
+    host_pwd = os.environ["HOST_PWD"]
+    det_path = os.path.join(host_pwd, "result", f"{item.name}_DET.png")
+    dist_path = os.path.join(host_pwd, "result", f"{item.name}_Distribution.png")
 
-    det_path = os.path.join(os.getcwd(), "result", f"{item.name}_DET.png")
-    dist_path = os.path.join(os.getcwd(), "result", f"{item.name}_Distribution.png")
+    # Local에서 테스트할 때
+    # det_path = os.path.join(os.getcwd(), "result", f"{item.name}_DET.png")
+    # dist_path = os.path.join(os.getcwd(), "result", f"{item.name}_Distribution.png")
 
     return {
         "det_png": det_path,
@@ -39,9 +41,12 @@ def create_2_graphs(item: Item):
 
 @app.post("/show_det")
 def show_det_curves(name: str = "sample"):
-    # host_pwd = os.environ["HOST_PWD"]
-    # det_path = os.path.join(host_pwd, "result", f"{item.name}_DET.png")
-    det_path = os.path.join(os.getcwd(), "result", f"{name}_DET.png")
+    # Server에서 테스트할 때
+    host_pwd = os.environ["HOST_PWD"]
+    det_path = os.path.join(host_pwd, "result", f"{name}_DET.png")
+
+    # Local에서 테스트할 때
+    # det_path = os.path.join(os.getcwd(), "result", f"{name}_DET.png")
 
     if not os.path.isfile(det_path):
         raise HTTPException(status_code=444, detail="그려진 그래프가 없습니다. 그래프를 먼저 만드세요.")
@@ -51,9 +56,12 @@ def show_det_curves(name: str = "sample"):
 
 @app.post("/show_dist")
 def show_distribution(name: str = "sample"):
-    # host_pwd = os.environ["HOST_PWD"]
-    # dist_path = os.path.join(host_pwd, "result", f"{name}_Distribution.png")
-    dist_path = os.path.join(os.getcwd(), "result", f"{name}_Distribution.png")
+    # Server에서 테스트할 때
+    host_pwd = os.environ["HOST_PWD"]
+    dist_path = os.path.join(host_pwd, "result", f"{name}_Distribution.png")
+
+    # Local에서 테스트할 때
+    # dist_path = os.path.join(os.getcwd(), "result", f"{name}_Distribution.png")
 
     if not os.path.isfile(dist_path):
         raise HTTPException(status_code=444, detail="그려진 그래프가 없습니다. 그래프를 먼저 만드세요.")
