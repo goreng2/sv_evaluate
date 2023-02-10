@@ -1,21 +1,21 @@
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
-import torch
 from sklearn.metrics import det_curve, DetCurveDisplay
 import numpy as np
+from typing import List
 
 sns.set_theme()
 
 
-def load(path: str):
+def load(path: str) -> List[float]:
     with open(path, "r", encoding="utf-8") as f:
         lines = [float(line.rstrip()) for line in f.readlines()]
 
     return lines
 
 
-def create_df(dataset, class_name):
+def create_df(dataset: List[float], class_name: str) -> pd.DataFrame:
     df = pd.DataFrame({
         "class": [class_name for i in dataset],
         "score": dataset
@@ -24,11 +24,7 @@ def create_df(dataset, class_name):
     return df
 
 
-def concat_df(*df):
-    return pd.concat(list(df), ignore_index=True)
-
-
-def EER(positive_scores, negative_scores):
+def EER(positive_scores: List[float], negative_scores: List[float]):
     """
     https://github.com/speechbrain/speechbrain/blob/fe16ffc9911cb41fecbd8d1160719f5f04ddfd2e/speechbrain/utils/metric_stats.py#L456
 
@@ -48,18 +44,16 @@ def EER(positive_scores, negative_scores):
     0.0
     """
     # Convert data type
-    if type(positive_scores) is not torch.Tensor or \
-     type(negative_scores) is not torch.Tensor:
-        positive_scores = torch.tensor(positive_scores)
-        negative_scores = torch.tensor(negative_scores)
+    positive_scores = np.array(positive_scores)
+    negative_scores = np.array(negative_scores)
 
     # Computing candidate thresholds
-    thresholds, _ = torch.sort(torch.cat([positive_scores, negative_scores]))
-    thresholds = torch.unique(thresholds)
+    thresholds = np.sort(np.concatenate([positive_scores, negative_scores]))
+    thresholds = np.unique(thresholds)
 
     # Adding intermediate thresholds
     interm_thresholds = (thresholds[0:-1] + thresholds[1:]) / 2
-    thresholds, _ = torch.sort(torch.cat([thresholds, interm_thresholds]))
+    thresholds = np.sort(np.concatenate([thresholds, interm_thresholds]))
 
     # Variable to store the min FRR, min FAR and their corresponding index
     min_index = 0
@@ -68,18 +62,18 @@ def EER(positive_scores, negative_scores):
 
     for i, cur_thresh in enumerate(thresholds):
         pos_scores_threshold = positive_scores <= cur_thresh
-        FRR = (pos_scores_threshold.sum(0)).float() / positive_scores.shape[0]
+        FRR = pos_scores_threshold.sum() / positive_scores.shape[0]
         del pos_scores_threshold
 
         neg_scores_threshold = negative_scores > cur_thresh
-        FAR = (neg_scores_threshold.sum(0)).float() / negative_scores.shape[0]
+        FAR = neg_scores_threshold.sum() / negative_scores.shape[0]
         del neg_scores_threshold
 
         # Finding the threshold for EER
-        if (FAR - FRR).abs().item() < abs(final_FAR - final_FRR) or i == 0:
+        if abs(FAR - FRR) < abs(final_FAR - final_FRR) or i == 0:
             min_index = i
-            final_FRR = FRR.item()
-            final_FAR = FAR.item()
+            final_FRR = FRR.astype(float)
+            final_FAR = FAR.astype(float)
 
     # It is possible that eer != fpr != fnr. We return (FAR  + FRR) / 2 as EER.
     # print(f"final_FAR {final_FAR}, final_FRR {final_FRR}")
@@ -184,7 +178,7 @@ def ppndf(p):
     return retval
 
 
-def draw_distribution(total_df, threshold):
+def draw_distribution(save_name, total_df, threshold):
     # Draw
     sns.displot(
         data=total_df,
@@ -205,10 +199,10 @@ def draw_distribution(total_df, threshold):
     plt.legend()
 
     # Save
-    plt.savefig(fname="Positive & Negative Distribution", bbox_inches="tight")
+    plt.savefig(fname=f"result/{save_name}_Distribution", bbox_inches="tight")
 
 
-def draw_DETcurves(total_df, EER_value):
+def draw_DETcurves(save_name, total_df, EER_value):
     # Preprocess
     y_true = total_df["class"].transform(lambda x: 1 if x == "positive" else 0).to_numpy()
     y_score = total_df["score"].to_numpy()
@@ -233,26 +227,30 @@ def draw_DETcurves(total_df, EER_value):
     plt.legend()
 
     # Save
-    plt.savefig(fname="Detection Error Tradeoff (DET) curves")
+    plt.savefig(fname=f"result/{save_name}_DET")
 
 
-def main():
-    # 1. Load Data
-    pos = load(path="target.TD_Small.NoSuf")
-    neg = load(path="nontarget.TD_Small.NoSuf")
-
+def main(name: str, pos_scores: List[float], neg_scores: List[float]):
     # 2. Create DataFrame
-    pos_df = create_df(dataset=pos, class_name="positive")
-    neg_df = create_df(dataset=neg, class_name="negative")
-    total_df = concat_df(pos_df, neg_df)
+    pos_df = create_df(dataset=pos_scores, class_name="positive")
+    neg_df = create_df(dataset=neg_scores, class_name="negative")
+    total_df = pd.concat([pos_df, neg_df], ignore_index=True)
 
     # 3. Calc EER, Threshold
-    EER_value, threshold = EER(positive_scores=pos, negative_scores=neg)
+    EER_value, threshold = EER(positive_scores=pos_scores, negative_scores=neg_scores)
 
     # 4. Draw & Save Graph
-    draw_distribution(total_df, threshold)
-    draw_DETcurves(total_df, EER_value)
+    draw_distribution(name, total_df, threshold)
+    draw_DETcurves(name, total_df, EER_value)
 
 
 if __name__ == '__main__':
-    main()
+    # 1. Load Data
+    pos: List[float] = load(path="pos_sample.txt")
+    neg: List[float] = load(path="neg_sample.txt")
+
+    main(
+        name="sample",
+        pos_scores=pos,
+        neg_scores=neg
+    )
