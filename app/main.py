@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List
@@ -16,19 +16,46 @@ class Item(BaseModel):
     neg_scores: List[float] = load(path="neg_sample.txt")
 
 
-@app.post("/")
-def get_graph(item: Item):
+@app.post("/create_graph")
+def create_2_graphs(item: Item):
     create_graph.main(
         name=item.name,
         pos_scores=item.pos_scores,
         neg_scores=item.neg_scores,
     )
 
-    host_pwd = os.environ["HOST_PWD"]
-    det_path = os.path.join(host_pwd, "result", f"{item.name}_DET.png")
-    dist_path = os.path.join(host_pwd, "result", f"{item.name}_Distribution.png")
+    # host_pwd = os.environ["HOST_PWD"]
+    # det_path = os.path.join(host_pwd, "result", f"{item.name}_DET.png")
+    # dist_path = os.path.join(host_pwd, "result", f"{item.name}_Distribution.png")
+
+    det_path = os.path.join(os.getcwd(), "result", f"{item.name}_DET.png")
+    dist_path = os.path.join(os.getcwd(), "result", f"{item.name}_Distribution.png")
 
     return {
         "det_png": det_path,
         "dist_png": dist_path,
     }
+
+
+@app.post("/show_det")
+def show_det_curves(name: str = "sample"):
+    # host_pwd = os.environ["HOST_PWD"]
+    # det_path = os.path.join(host_pwd, "result", f"{item.name}_DET.png")
+    det_path = os.path.join(os.getcwd(), "result", f"{name}_DET.png")
+
+    if not os.path.isfile(det_path):
+        raise HTTPException(status_code=444, detail="그려진 그래프가 없습니다. 그래프를 먼저 만드세요.")
+
+    return FileResponse(det_path)
+
+
+@app.post("/show_dist")
+def show_distribution(name: str = "sample"):
+    # host_pwd = os.environ["HOST_PWD"]
+    # dist_path = os.path.join(host_pwd, "result", f"{name}_Distribution.png")
+    dist_path = os.path.join(os.getcwd(), "result", f"{name}_Distribution.png")
+
+    if not os.path.isfile(dist_path):
+        raise HTTPException(status_code=444, detail="그려진 그래프가 없습니다. 그래프를 먼저 만드세요.")
+
+    return FileResponse(dist_path)
