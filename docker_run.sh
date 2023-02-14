@@ -3,4 +3,4 @@ docker run -d \
   -v $(pwd)/result:/workspace/result \
   -e HOST_PWD=$(pwd) \
   --name sv-test \
-  sv-test:v0.1
+  sv-test:v0.3

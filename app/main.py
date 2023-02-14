@@ -16,7 +16,7 @@ class Item(BaseModel):
     neg_scores: List[float] = load(path="neg_sample.txt")
 
 
-@app.post("/create_graph")
+@app.post("/create_graphs")
 def create_2_graphs(item: Item):
     create_graph.main(
         name=item.name,
@@ -39,31 +39,31 @@ def create_2_graphs(item: Item):
     }
 
 
-@app.post("/show_det")
-def show_det_curves(name: str = "sample"):
-    # Server에서 테스트할 때
-    host_pwd = os.environ["HOST_PWD"]
-    det_path = os.path.join(host_pwd, "result", f"{name}_DET.png")
+@app.get("/show_list")
+def show_graph_list():
+    path = os.path.join(os.getcwd(), "result")
+    graphs = os.listdir(path)
 
-    # Local에서 테스트할 때
-    # det_path = os.path.join(os.getcwd(), "result", f"{name}_DET.png")
+    return {
+        "graphs": graphs
+    }
+
+
+@app.get("/show_det")
+def show_det_curves_graph(name: str = "sample"):
+    det_path = os.path.join(os.getcwd(), "result", f"{name}_DET.png")
 
     if not os.path.isfile(det_path):
-        raise HTTPException(status_code=444, detail="그려진 그래프가 없습니다. 그래프를 먼저 만드세요.")
+        raise HTTPException(status_code=444, detail=f"그려진 그래프가 없습니다. 그래프를 먼저 만드세요. (Path: {det_path})")
 
     return FileResponse(det_path)
 
 
-@app.post("/show_dist")
-def show_distribution(name: str = "sample"):
-    # Server에서 테스트할 때
-    host_pwd = os.environ["HOST_PWD"]
-    dist_path = os.path.join(host_pwd, "result", f"{name}_Distribution.png")
-
-    # Local에서 테스트할 때
-    # dist_path = os.path.join(os.getcwd(), "result", f"{name}_Distribution.png")
+@app.get("/show_dist")
+def show_distribution_graph(name: str = "sample"):
+    dist_path = os.path.join(os.getcwd(), "result", f"{name}_Distribution.png")
 
     if not os.path.isfile(dist_path):
-        raise HTTPException(status_code=444, detail="그려진 그래프가 없습니다. 그래프를 먼저 만드세요.")
+        raise HTTPException(status_code=444, detail=f"그려진 그래프가 없습니다. 그래프를 먼저 만드세요. (Path: {dist_path})")
 
     return FileResponse(dist_path)
