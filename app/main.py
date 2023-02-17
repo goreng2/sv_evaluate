@@ -45,7 +45,7 @@ def show_graph_list():
     graphs = os.listdir(path)
 
     return {
-        "graphs": graphs
+        "graphs": sorted(graphs)
     }
 
 
