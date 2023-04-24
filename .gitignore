@@ -1,1 +1,4 @@
 .idea
+*.tar
+*.png
+__pycache__
